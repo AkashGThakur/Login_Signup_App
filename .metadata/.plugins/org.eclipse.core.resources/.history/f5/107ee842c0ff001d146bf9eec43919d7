@@ -1,0 +1,64 @@
+package com.example.demo.service;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.security.core.userdetails.UserDetailsService;
+
+
+import com.example.demo.model.LoginRequest;
+import com.example.demo.model.SignupRequest;
+import com.example.demo.model.User;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.util.JwtUtil;
+
+@Service
+public class AuthService {
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public AuthService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public void signup(SignupRequest signupRequest) {
+        User user = new User();
+        user.setUsername(signupRequest.getUsername());
+        user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
+        user.setEmail(signupRequest.getEmail());
+
+        userRepository.save(user);
+        
+        private final AuthenticationManager authenticationManager;
+        private final JwtUtil jwtUtil;
+
+        public AuthService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder,
+                           AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+            this.userRepository = userRepository;
+            this.passwordEncoder = passwordEncoder;
+            this.authenticationManager = authenticationManager;
+            this.jwtUtil = jwtUtil;
+        }
+
+        public ResponseEntity<?> login(LoginRequest loginRequest) {
+            try {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+                );
+            } catch (BadCredentialsException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            }
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+            String token = jwtUtil.generateToken(userDetails);
+
+            return ResponseEntity.ok(new JwtResponse(token));
+       
+    }
+}
